@@ -1,0 +1,131 @@
+-- إعداد العناصر الخاصة بالواجهة
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local HeaderFrame = Instance.new("Frame")
+local TitleLabel = Instance.new("TextLabel")
+local ToggleButton = Instance.new("TextButton")
+local RightsLabel = Instance.new("TextLabel")
+
+-- إعدادات واجهة المستخدم
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+ScreenGui.ResetOnSpawn = false
+
+-- إعدادات الإطار الرئيسي
+Frame.Parent = ScreenGui
+Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+Frame.BorderSizePixel = 2
+Frame.Position = UDim2.new(0.5, -120, 0.5, -90)
+Frame.Size = UDim2.new(0, 240, 0, 180)
+Frame.Active = true
+Frame.Draggable = true
+
+-- إعدادات رأس الإطار
+HeaderFrame.Parent = Frame
+HeaderFrame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+HeaderFrame.BorderSizePixel = 0
+HeaderFrame.Size = UDim2.new(1, 0, 0, 40)
+
+-- إعدادات عنوان الواجهة
+TitleLabel.Parent = HeaderFrame
+TitleLabel.BackgroundTransparency = 1
+TitleLabel.Position = UDim2.new(0.1, 0, 0, 0)
+TitleLabel.Size = UDim2.new(0.8, 0, 1, 0)
+TitleLabel.Font = Enum.Font.SourceSansBold
+TitleLabel.Text = "fling🦊"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.TextStrokeTransparency = 0.6
+
+-- إعدادات زر تشغيل/إيقاف الفليش
+ToggleButton.Parent = Frame
+ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+ToggleButton.BorderSizePixel = 0
+ToggleButton.Position = UDim2.new(0.25, 0, 0.5, 0)
+ToggleButton.Size = UDim2.new(0.5, 0, 0, 30)
+ToggleButton.Font = Enum.Font.SourceSansBold
+ToggleButton.Text = "✔️"
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.TextSize = 18
+
+-- تغيير لون الزر عند التفاعل مع الماوس
+ToggleButton.MouseEnter:Connect(function()
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
+end)
+
+ToggleButton.MouseLeave:Connect(function()
+    ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+end)
+
+-- إعداد حقوق البرمجة
+RightsLabel.Parent = Frame
+RightsLabel.BackgroundTransparency = 1
+RightsLabel.Position = UDim2.new(0.2, 0, 0.8, 0)
+RightsLabel.Size = UDim2.new(0.6, 0, 0, 20)
+RightsLabel.Font = Enum.Font.SourceSans
+RightsLabel.Text = "@xxxxxthefox"
+RightsLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+RightsLabel.TextSize = 14
+RightsLabel.TextStrokeTransparency = 0.9
+
+-- دمج وظيفة الفليش وتقويتها
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local hiddenfling = false
+local flingThread
+
+-- تحسين منع التكرار
+local function preventRepeatedActions()
+    -- التأكد من أن الفليش لا يعمل أكثر من مرة
+    if not game.ReplicatedStorage:FindFirstChild("FlingActive") then
+        local detection = Instance.new("Folder")
+        detection.Name = "FlingActive"
+        detection.Parent = game.ReplicatedStorage
+    end
+end
+preventRepeatedActions()
+
+-- تحسين وظيفة الفليش
+local function fling()
+    local lp = Players.LocalPlayer
+    local c, hrp, vel, movel = nil, nil, nil, 0.1
+    local flingForce = 100000000000000000000 -- قوة الفليش الأساسية
+    local angleForce = 2000000000000000000 -- تأثير الزوايا
+
+    while hiddenfling do
+        RunService.Heartbeat:Wait()
+        c = lp.Character
+        hrp = c and c:FindFirstChild("HumanoidRootPart")
+
+        if hrp then
+            vel = hrp.Velocity
+            -- تعزيز الفليش بتأثير الزوايا وزيادة القوة في جميع الاتجاهات
+            hrp.Velocity = vel * flingForce + Vector3.new(math.random(-angleForce, angleForce), flingForce, math.random(-angleForce, angleForce))
+            RunService.RenderStepped:Wait()
+            hrp.Velocity = vel
+            RunService.Stepped:Wait()
+            hrp.Velocity = vel + Vector3.new(0, movel, 0)
+            movel = -movel
+        end
+    end
+end
+
+-- تفعيل/إيقاف الفليش عند الضغط على الزر
+ToggleButton.MouseButton1Click:Connect(function()
+    -- منع التكرار بشكل ديناميكي
+    if game.ReplicatedStorage:FindFirstChild("FlingActive") then
+        game.ReplicatedStorage.FlingActive:ClearAllChildren()  -- إعادة تعيين الكائن للتأكد من عدم التكرار
+    end
+
+    -- حالة الفليش
+    hiddenfling = not hiddenfling
+    ToggleButton.Text = hiddenfling and "❌" or "✔️"
+
+    -- تشغيل الفليش فقط إذا لم يكن قيد التشغيل
+    if hiddenfling then
+        flingThread = coroutine.create(fling)
+        coroutine.resume(flingThread)
+    end
+end)
